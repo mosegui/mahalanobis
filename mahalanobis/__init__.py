@@ -195,10 +195,8 @@ class Mahalanobis:
             self._logger.error('Singular covariance matrix not invertible')
             raise SingularError('Mahalanobis distances cannot be calculated with singular covariance matrix')
 
-        # TODO: improve/avoid loop function performance
-        for observation in input_array:
-            # is this for the case that an externally passed array has more columns
-            # than the one used for calibration
+        for observation in input_array:  # TODO: improve/avoid loop function performance
+            # is this for the case that an externally passed array has more columns than the one used for calibration
             datapoint = observation[: self.__calibration_mean.shape[0]]
 
             diff_array = datapoint - self.__calibration_mean
