@@ -12,7 +12,6 @@ import logging
 class Mahalanobis:
     def __init__(self, array, calib_entries, nan_method='median'):
         """Instances a Mahalanobis calculator to act over a one or multidimensional numpy array
-
         Parameters
         ----------
         array : np.array
@@ -33,21 +32,22 @@ class Mahalanobis:
         if len(self.array.shape) > 1:
             self.dimensionality = self.array.shape[1]
         else:
-            self.array = self.array.reshape(-1,1)
+            self.array = self.array.reshape(-1, 1)
             self.dimensionality = 1
 
         if isinstance(self.calib_entries, int):
-            self.calibration_chunk = self.array[:self.calib_entries]
+            self.calibration_chunk = self.array[: self.calib_entries]
         elif isinstance(self.calib_entries, list) or isinstance(self.calib_entries, np.ndarray):
             self.calibration_chunk = self.array[self.calib_entries]
         else:
             self._logger.error('Wrong format in calib_entries argument. Must be {float, int, list, np.array}')
             raise ValueError('Wrong format in calib_entries argument. Must be {float, int, list, np.array}')
 
-        self.__calibration_mean = None
-        self.__cov_matrix = None
         self.nan_method = nan_method
-        self.distances = None
+
+        self.__calibration_mean = self._calc_mean()
+        self.__cov_matrix = self._calc_cov_matrix()
+        self.distances = self.__calculate_dists(self.array)
 
     def __reduce_multidimensional_array_dimension(self):
         """For a multi-dimensional array (multi-column), it removes all the array columns
@@ -56,17 +56,15 @@ class Mahalanobis:
         self.array = np.delete(self.array, self.nan_columns, axis=1)
 
         if isinstance(self.calib_entries, int):
-            self.calibration_chunk = self.array[:self.calib_entries]
+            self.calibration_chunk = self.array[: self.calib_entries]
         elif isinstance(self.calib_entries, list) or isinstance(self.calib_entries, np.ndarray):
             self.calibration_chunk = self.array[self.calib_entries]
 
         self.dimensionality = self.array.shape[1]
 
-
     def __swap_nans(self):
         """ takes the calibration array and substitutes the NaNs by the mean
         or median value of the corresponding column (feature)
-
         Returns
         -------
         substitute : float or list
@@ -96,14 +94,12 @@ class Mahalanobis:
             """Substitutes the NaNs in the input array with the value in nan_subtitutes.
             In the case of nD-array, nan_substitutes is a list of floats and the NaNs are
             substituted column-wise
-
             Parameters
             ----------
             array_to_clean : np.array
                 input array containing NaNs
             nan_substitutes : float or list of floats
                 value or list of values to substitute in the NaNs of the correspondign features
-
             Returns
             -------
             array_to_clean : np.array
@@ -122,9 +118,9 @@ class Mahalanobis:
         number_of_nans = np.count_nonzero(np.isnan(self.calibration_chunk), axis=0)
 
         if isinstance(self.calib_entries, int):
-            nans_ratio = number_of_nans/self.calib_entries
+            nans_ratio = number_of_nans / self.calib_entries
         elif isinstance(self.calib_entries, list) or isinstance(self.calib_entries, np.ndarray):
-            nans_ratio = number_of_nans/len(self.calib_entries)
+            nans_ratio = number_of_nans / len(self.calib_entries)
 
         try:
             if len(self.array.shape) > 1:
@@ -150,9 +146,8 @@ class Mahalanobis:
 
         self._logger.info('feature NaNs were substituted with feature {}'.format(self.nan_method))
 
-    def calc_mean(self):
+    def _calc_mean(self):
         """Returns the mean of the calibration range of the feature vector
-
         Returns
         -------
         __calibration_mean : float or np.array
@@ -163,10 +158,60 @@ class Mahalanobis:
         self.__calibration_mean = self.calibration_chunk.mean(axis=0)
         return self.__calibration_mean
 
+    def _calc_cov_matrix(self):
+        """Computes the covariance matrix from the calibration set of the feature array
+        Returns
+        -------
+        __cov_matrix : np.array
+            covariance matrix of reference set
+        """
+        self.__swap_nans()
 
-    def get_mean(self):
+        means_array = np.tile(self.__calibration_mean, (self.calibration_chunk.shape[0], 1))
+
+        variations_array = self.calibration_chunk - means_array
+
+        self.__cov_matrix = np.dot(variations_array.T, variations_array)
+
+        return self.__cov_matrix
+
+    def __calculate_dists(self, input_array):  # TODO: Write unit tests
+        """Uses the calculated mean and covariance matrix for calculating the Mahalanobis distances
+        for each observation in the inbound array
+        Parameters
+        ----------
+        input_array : np.array
+            array with the observations to be used in the calculation of the Mahalanobis distances
+        Returns
+        -------
+        distances_array : np.array
+            one-dimensional array with the Mahalanobis distances correspondign to each input observation
+        """
+        mahalanobis_list = []
+
+        if np.linalg.det(self.__cov_matrix) != 0.0:
+            self.__inv_cov_matrix = np.linalg.inv(self.__cov_matrix)
+        else:
+            self._logger.error('Singular covariance matrix not invertible')
+            raise SingularError('Mahalanobis distances cannot be calculated with singular covariance matrix')
+
+        # TODO: improve/avoid loop function performance
+        for observation in input_array:
+            # is this for the case that an externally passed array has more columns
+            # than the one used for calibration
+            datapoint = observation[: self.__calibration_mean.shape[0]]
+
+            diff_array = datapoint - self.__calibration_mean
+
+            observation_distances = np.dot(np.dot(diff_array, self.__inv_cov_matrix), diff_array.T)
+            mahalanobis_list.append(observation_distances)
+            distances_array = np.array(mahalanobis_list)
+
+        return distances_array
+
+    @property
+    def mean(self):
         """Returns the value currently stored in self.__calibration_mean
-
         Returns
         -------
         __calibration_mean : float or np.array
@@ -174,10 +219,9 @@ class Mahalanobis:
         """
         return self.__calibration_mean
 
-
-    def set_mean(self, new_mean_array):
+    @mean.setter
+    def mean(self, new_mean_array):
         """Sets the passed array as the new mean for the calculations
-
         Parameters
         ----------
         new_mean_array : np.array or float
@@ -217,33 +261,9 @@ class Mahalanobis:
             self._logger.error(f'array must be float (not NaN) or numpy array')
             raise TypeError(f'array must be float (not NaN) or numpy array')
 
-
-    def calc_cov_matrix(self):
-        """Computes the covariance matrix from the calibration set of the feature array
-
-        Returns
-        -------
-        __cov_matrix : np.array
-            covariance matrix of reference set
-        """
-        self.__swap_nans()
-
-        if self.__calibration_mean is not None:
-            means_array = np.tile(self.__calibration_mean, (self.calibration_chunk.shape[0], 1))
-        else:
-            self._logger.error('Cannot calculate covariance matrix. Must calculate mean first')
-            raise ValueError('Cannot calculate covariance matrix. Must calculate mean first')
-
-        variations_array = self.calibration_chunk - means_array
-
-        self.__cov_matrix = np.dot(variations_array.T, variations_array)
-
-        return self.__cov_matrix
-
-
-    def get_cov_matrix(self):
+    @property
+    def cov_matrix(self):
         """Returns the value currently stored in self.__cov_matrix
-
         Returns
         -------
         __cov_matrix : np.array
@@ -251,10 +271,9 @@ class Mahalanobis:
         """
         return self.__cov_matrix
 
-
-    def set_cov_matrix(self, new_cov_matrix):
+    @cov_matrix.setter
+    def cov_matrix(self, new_cov_matrix):
         """Sets the passed array as the new covariance matrix for the calculations
-
         Parameters
         ----------
         new_cov_matrix : np.array or float
@@ -294,83 +313,13 @@ class Mahalanobis:
             self._logger.error(f'wrong array data format. Must be float or numpy array')
             raise TypeError(f'wrong array data format. Must be float or numpy array')
 
-
-    def __calculate_dists(self, input_array):   # TODO: Write unit tests
-        """Uses the calculated mean and covariance matrix for calculating the Mahalanobis distances
-        for each observation in the inbound array
-
-        Parameters
-        ----------
-        input_array : np.array
-            array with the observations to be used in the calculation of the Mahalanobis distances
-
-        Returns
-        -------
-        distances_array : np.array
-            one-dimensional array with the Mahalanobis distances correspondign to each input observation
-        """
-        mahalanobis_list = []
-
-        if np.linalg.det(self.__cov_matrix) != 0.:
-            self.__inv_cov_matrix = np.linalg.inv(self.__cov_matrix)
-        else:
-            self._logger.error('Singular covariance matrix not invertible')
-            raise SingularError('Mahalanobis distances cannot be calculated with singular covariance matrix')
-
-        # TODO: improve/avoid loop function performance
-        for observation in input_array:
-            # is this for the case that an externally passed array has more columns
-            # than the one used for calibration
-            datapoint = observation[:self.__calibration_mean.shape[0]]
-
-            diff_array = datapoint - self.__calibration_mean
-
-            observation_distances = np.dot(np.dot(diff_array, self.__inv_cov_matrix), diff_array.T)
-            mahalanobis_list.append(observation_distances)
-            distances_array = np.array(mahalanobis_list)
-
-        return distances_array
-
-
-    def calc_dists_set(self):
-        """Returns the list of Mahalanobis distances corresponding to the input array
-
-        Returns
-        -------
-        mahalanobis_distances : np.array
-            one-dimensional array with the Mahalanobis distances corresponding to each input observation
-        """
-        if self.__calibration_mean is None:
-            self.calc_mean()
-
-        if self.__cov_matrix is None:
-            self.calc_cov_matrix()
-
-        self.distances = self.__calculate_dists(self.array)
-
-        return self.distances
-
-
-    def get_distances(self):
-        """Returns the value currently stored in self.distances
-
-        Returns
-        -------
-        distances : np.array
-            Mahalanobis distances corresponding to the input data set
-        """
-        return self.distances
-
-
-    def calc_dists_array(self, new_input):
+    def calc_distances(self, new_input):
         """Calculates the Mahalanobis distances for the passed feature array, provided that a
         covariance matrix and a mean array is already calculated
-
         Parameters
         ----------
         new_input : np.array or float
             array with the observations to be used in the calculation of the Mahalanobis distances
-
         Returns
         -------
         mahalanobis_distances : np.array
@@ -381,28 +330,19 @@ class Mahalanobis:
                 new_input = np.array([new_input])
 
         except:
-            if self.__cov_matrix is None or self.__calibration_mean is None:
-                self._logger.error('Mahalanobis distance cannot be calculated. Reference mean ' +
-                                   'and/or covariance matrix are not yet defined. Call functions ' +
-                                   '"calc_mean" and "calc_cov_matrix" after feeding with a ' +
-                                   'reference data set')
-                raise ValueError('Mahalanobis distances cannot be calculated. Fingerprinting mean' +
-                                 'or cavariance matrix are not yet defined')
+            if len(new_input.shape) == 1:
+                new_input = np.array([np.delete(new_input, self.nan_columns)])
+            elif len(new_input.shape) == 0:
+                self._logger.error('empty inbound array')
             else:
-                if len(new_input.shape) == 1:
-                    new_input = np.array([np.delete(new_input, self.nan_columns)])
-                elif len(new_input.shape) == 0:
-                    self._logger.error('empty inbound array')
-                else:
-                    new_input = np.delete(new_input, self.nan_columns, axis=1)
+                new_input = np.delete(new_input, self.nan_columns, axis=1)
 
-                mahalanobis_distances = self.__calculate_dists(new_input)
-
-                return mahalanobis_distances
+            return self.__calculate_dists(new_input)
 
 
 class ShapeError(ValueError):
     pass
+
 
 class SingularError(ValueError):
     pass
