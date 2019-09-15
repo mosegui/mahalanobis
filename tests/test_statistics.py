@@ -1,13 +1,13 @@
 import pytest
 import numpy as np
 
-from mahalanobis import Mahalanobis, ShapeError
+from mahalanobis import Mahalanobis
 
 
 class oneD_environment:
     @pytest.fixture
     def one_dim_array(self):
-        oneD_array = np.arange(30)
+        oneD_array = np.arange(30).reshape(-1,1)
         yield oneD_array
         del oneD_array
 
@@ -46,7 +46,7 @@ class Test_1D_mean(oneD_environment):
 class Test_1D_cov_matrix(oneD_environment):
     def test_cov_matrix_onedimensional(self, test_instance_1D):
         # must equal the regular variance
-        assert test_instance_1D.cov_matrix.tolist() == [[60]]
+        assert np.allclose(test_instance_1D.cov_matrix, np.array([[60/9.]]))
 
     def test_set_new_valid_onedimensional_cov_matrix(self, test_instance_1D):
         test_instance_1D.cov_matrix = np.array([[2]])

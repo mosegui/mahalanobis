@@ -13,16 +13,15 @@ def nD_array():
 
     del n_dim_array
 
-def test_swap_nans_median(nD_array):
+
+def test_replace_nans_median(nD_array):
     test_instance = Mahalanobis(nD_array, 5)
-    test_instance._Mahalanobis__swap_nans()
-    assert test_instance.calibration_chunk.tolist(), [[0.0, 1.0, 2.0], [6.0, 4.0, 8.0], [6.0, 7.0, 8.0],
-                                                      [9.0, 5.5, 8.0], [6.0, 13.0, 14.0]]
+    test_instance._replace_nans()
+    assert test_instance.calibration_chunk.tolist(), [[0.0, 1.0, 2.0], [6.0, 4.0, 8.0], [6.0, 7.0, 8.0], [9.0, 5.5, 8.0], [6.0, 13.0, 14.0]]
     del test_instance
 
 
-def test_swap_nans_mean(nD_array):
-    test_instance = Mahalanobis(nD_array, 5, nan_method='mean')
-    test_instance._Mahalanobis__swap_nans()
-    assert test_instance.calibration_chunk.tolist(), [[0.0, 1.0, 2.0], [5.0, 4.0, 8.0], [6.0, 7.0, 8.0],
-                                                      [9.0, 6.25, 8.0], [5.0, 13.0, 14.0]]
+def test_replace_nans_mean(nD_array):
+    test_instance = Mahalanobis(nD_array, 5, nan_subst_method='mean')
+    test_instance._replace_nans()
+    assert test_instance.calibration_chunk.tolist(), [[0.0, 1.0, 2.0], [5.0, 4.0, 8.0], [6.0, 7.0, 8.0], [9.0, 6.25, 8.0], [5.0, 13.0, 14.0]]
