@@ -9,6 +9,11 @@ import numpy as np
 import logging
 
 
+# TODO: implement recent craft ffX changes
+# TODO: abstract methods for undefined upstream methods/attributes
+# TODO: move calc_distances from __init__ to __call__ --> chance to swap non-invertible covariance matrices before error
+
+
 class Mahalanobis1D:
     """Support parent class for MahalanobisBenchmark. Provides methods used for replacing NaNs in
     one-dimensional input arrays and flow control for Mahalanobis distance calculations
