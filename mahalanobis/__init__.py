@@ -11,8 +11,7 @@ import numpy as np
 
 from .better_abc import abstract_attribute
 
-# TODO: implement recent craft ffX changes
-# TODO: abstract methods for undefined upstream methods/attributes
+
 # TODO: move calc_distances from __init__ to __call__ --> chance to swap non-invertible covariance matrices before error
 
 
