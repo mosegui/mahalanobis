@@ -4,9 +4,9 @@ Created on Wed Oct 24 17:30:56 2018
 
 @author: mosegui
 """
+import logging
 
 import numpy as np
-import logging
 
 
 # TODO: implement recent craft ffX changes
@@ -491,7 +491,6 @@ def Mahalanobis(input_array, calib_rows, nan_subst_method='median'):
                 self._cov_matrix = self._check_shape(new_cov_matrix, self._cov_matrix).reshape(1,1)
             except:
                 self._cov_matrix = self._check_shape(new_cov_matrix, self._cov_matrix)
-
 
     return MahalanobisBenchmark(input_array, calib_rows, nan_method=nan_subst_method)
 
