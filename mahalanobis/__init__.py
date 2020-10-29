@@ -121,8 +121,9 @@ class Mahalanobis1D:
         ValueError : if the inbound array is empty
         """
         if new_input.size == 0.:
-            self._logger.error('empty inbound array')
-            raise ValueError('empty inbound array')
+            msg = 'empty inbound array'
+            self._logger.error(msg)
+            raise ValueError(msg)
         else:
             if isinstance(float(new_input), float) and not np.isnan(new_input):
                 new_input = np.array([new_input])
@@ -231,7 +232,7 @@ class MahalanobisND:
 
         self.calibration_chunk = self._substitute_nans(self.calibration_chunk, nan_substitutes)
 
-        self._logger.info('feature NaNs were substituted with feature {}'.format(self.nan_filler.__name__))
+        self._logger.info(f'feature NaNs were substituted with feature {self.nan_filler.__name__}')
 
     def calc_distances(self, new_input):
         """ Checks that the input array on which Mahalanobis distances must be calculated is not empty, and
@@ -253,8 +254,9 @@ class MahalanobisND:
         """
 
         if new_input.size == 0.:
-            self._logger.error('empty inbound array')
-            raise ValueError('empty inbound array')
+            msg = 'empty inbound array'
+            self._logger.error(msg)
+            raise ValueError(msg)
         else:
             new_input = np.delete(new_input, self.nan_columns, axis=1)
 
@@ -343,7 +345,7 @@ def Mahalanobis(input_array, calib_rows, nan_subst_method='median'):
             elif nan_method.lower() == 'mean':
                 self.nan_filler = np.mean
             else:
-                raise ValueError('NaN bypassing method needs to be mean or median')
+                raise NotImplementedError('NaN bypassing method needs to be mean or median')
 
             self._select_calibration_subarray()
 
@@ -370,8 +372,9 @@ def Mahalanobis(input_array, calib_rows, nan_subst_method='median'):
                 self.calib_entries = np.array(self.calib_entries)
                 self.calibration_chunk = self.array[self.calib_entries]
             else:
-                self._logger.error('Wrong format in calib_entries argument. Must be convertible to integer, list or np.array')
-                raise ValueError('Wrong format in calib_entries argument. Must be convertible to integer, list or np.array')
+                msg = 'Wrong format in calib_entries argument. Must be convertible to integer, list or np.array'
+                self._logger.error(msg)
+                raise ValueError(msg)
 
             self.dimensionality = self.array.shape[1]
 
@@ -424,12 +427,14 @@ def Mahalanobis(input_array, calib_rows, nan_subst_method='median'):
                 # TODO: look into possible pseudo-inverses for the case of non-invertible covariance matrices.
                 # https://en.wikipedia.org/wiki/Generalized_inverse#Reflexive_generalized_inverse
             else:
-                self._logger.error('Singular covariance matrix not invertible')
-                raise SingularError('Mahalanobis distances cannot be calculated with singular covariance matrix')
+                msg = 'Mahalanobis distances cannot be calculated with singular covariance matrix'
+                self._logger.error(msg)
+                raise SingularError(msg)
 
             if input_array.shape[1] != self.dimensionality:
-                self._logger.error('Dimensions of passed array do not match calibration dimensions of Mahalanobis object')
-                raise ShapeError('Dimensions of passed array do not match calibration dimensions of Mahalanobis object')
+                msg = 'Dimensions of passed array do not match calibration dimensions of Mahalanobis object'
+                self._logger.error(msg)
+                raise ShapeError(msg)
 
             diff_array = input_array - np.tile(self._calibration_mean, (input_array.shape[0], 1))
 
@@ -461,26 +466,29 @@ def Mahalanobis(input_array, calib_rows, nan_subst_method='median'):
             if isinstance(new_array, np.ndarray):
                 try:
                     assert new_array.shape == current_array.shape
-                except AssertionError:
-                    self._logger.exception('new array and current array shapes do not match')
-                    raise ShapeError('new array and current array shapes do not match')
+                except AssertionError as e:
+                    self._logger.exception('new array and current array shapes do not match', exc_info=True)
+                    raise e
 
                 if any([item in str(new_array.dtype) for item in ['float', 'int']]) and not np.isnan(new_array).any():
                     return new_array
                 else:
-                    self._logger.error('array contains non-numeric characters')
-                    raise ValueError('array contains non-numeric characters')
+                    msg = 'array contains non-numeric characters'
+                    self._logger.error(msg)
+                    raise ValueError(msg)
 
             elif isinstance(float(new_array), float) and not np.isnan(new_array):
                 if isinstance(float(current_array), float):
                     return np.array([new_array])
                 else:
-                    self._logger.error(f'array has incorrect shape. Must have shape ({current_array.shape})')
-                    raise ShapeError(f'array has incorrect shape. Must have shape ({current_array.shape})')
+                    msg = f'array has incorrect shape. Must have shape ({current_array.shape})'
+                    self._logger.error(msg)
+                    raise ShapeError(msg)
 
             else:
-                self._logger.error(f'array must be float (not NaN) or numpy array')
-                raise TypeError(f'array must be float (not NaN) or numpy array')
+                msg = 'array must be float (not NaN) or numpy array'
+                self._logger.error(msg)
+                raise TypeError(msg)
 
         @property
         def mean(self):
