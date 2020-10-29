@@ -4,10 +4,12 @@ Created on Wed Oct 24 17:30:56 2018
 
 @author: mosegui
 """
+import abc
 import logging
 
 import numpy as np
 
+from .better_abc import abstract_attribute
 
 # TODO: implement recent craft ffX changes
 # TODO: abstract methods for undefined upstream methods/attributes
@@ -34,6 +36,22 @@ class Mahalanobis1D:
         self.calib_entries = calib_entries
 
         self._replace_nans()
+
+    @abstract_attribute
+    def nan_filler(self):
+        pass
+
+    @abc.abstractmethod
+    def _calculate_dists(self, *args):
+        pass
+
+    @abstract_attribute
+    def nans_ratio(self):
+        pass
+
+    @abc.abstractmethod
+    def _calc_nan_ratio(self, *args):
+        pass
 
     def _get_nan_substitutes(self, array_with_nans):
         """According to the passed method it retrieves the value to substitute the array NaNs.
@@ -133,6 +151,26 @@ class MahalanobisND:
         self.calib_entries = calib_entries
 
         self._replace_nans()
+
+    @abstract_attribute
+    def nan_filler(self):
+        pass
+
+    @abc.abstractmethod
+    def _calculate_dists(self, *args):
+        pass
+
+    @abstract_attribute
+    def nans_ratio(self):
+        pass
+
+    @abc.abstractmethod
+    def _calc_nan_ratio(self, *args):
+        pass
+
+    @abc.abstractmethod
+    def _select_calibration_subarray(self):
+        pass
 
     def _reduce_multidimensional_array_dimension(self):
         """For a multi-dimensional array (multi-column), it removes all the array columns
