@@ -11,7 +11,7 @@ import numpy as np
 
 from .better_abc import abstract_attribute
 
-
+# TODO: improve design. Current design is very confusing
 # TODO: move calc_distances from __init__ to __call__ --> chance to swap non-invertible covariance matrices before error
 
 
@@ -352,6 +352,7 @@ def Mahalanobis(input_array, calib_rows, nan_subst_method='median'):
             self._calibration_mean = self.calibration_chunk.mean(axis=0)  # mean to which array entries will be compared
             self._calc_cov_matrix()
 
+        def __call__(self):
             self.distances = self._calculate_dists(self.array)
 
         def _select_calibration_subarray(self):

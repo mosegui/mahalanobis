@@ -295,6 +295,7 @@ class Test_nD_integration(arrays_factory):
             [40.6755418],
         ]
 
+        test_instance_nD()
         assert np.allclose(test_instance_nD.distances, expected_result) == True
 
     def test_integration_external_nD_array(self, test_instance_nD):
@@ -323,8 +324,6 @@ class Test_nD_integration(arrays_factory):
                 66.62539719,
             ]
         )
-
-        print()
 
         assert np.allclose(test_instance_nD.calc_distances(external_array), expected_result.reshape(-1, 1)) == True
 
@@ -402,7 +401,7 @@ class Test_nD_integration_nan(arrays_factory):
                 37.40151539,
             ]
         )
-
+        test_instance_nD()
         assert np.allclose(test_instance_nD.distances, expected_result.reshape(-1, 1), equal_nan=True) == True
 
 
@@ -468,7 +467,7 @@ class Test_1D_integration(arrays_factory):
                 12.96008989,
             ]
         )
-
+        test_instance_1D()
         assert np.allclose(test_instance_1D.distances, expected_result.reshape(-1, 1)) is True
 
 
@@ -541,7 +540,7 @@ class Test_1D_integration_nan(arrays_factory):
                 14.88303732,
             ]
         )
-
+        test_instance_1D_with_nans()
         assert np.allclose(test_instance_1D_with_nans.distances, expected_result.reshape(-1, 1), equal_nan=True) is True
 
 
@@ -577,5 +576,5 @@ class Test_1D_integration_sparse_calibration:
                 1.11252608,
             ]
         )
-
+        test_instance_1D_sparse_calibration()
         assert np.allclose(test_instance_1D_sparse_calibration.distances, expected_result.reshape(-1, 1)) is True
