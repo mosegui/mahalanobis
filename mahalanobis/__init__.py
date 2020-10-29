@@ -11,8 +11,8 @@ import numpy as np
 
 from .better_abc import abstract_attribute
 
+
 # TODO: improve design. Current design is very confusing
-# TODO: move calc_distances from __init__ to __call__ --> chance to swap non-invertible covariance matrices before error
 
 
 class Mahalanobis1D:
