@@ -466,9 +466,10 @@ def Mahalanobis(input_array, calib_rows, nan_subst_method='median'):
             if isinstance(new_array, np.ndarray):
                 try:
                     assert new_array.shape == current_array.shape
-                except AssertionError as e:
-                    self._logger.exception('new array and current array shapes do not match', exc_info=True)
-                    raise e
+                except AssertionError:
+                    msg = 'new array and current array shapes do not match'
+                    self._logger.exception(msg, exc_info=True)
+                    raise SingularError(msg)
 
                 if any([item in str(new_array.dtype) for item in ['float', 'int']]) and not np.isnan(new_array).any():
                     return new_array
