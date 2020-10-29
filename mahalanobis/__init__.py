@@ -403,6 +403,19 @@ def Mahalanobis(input_array, calib_rows, nan_subst_method='median'):
 
             self._cov_matrix = (np.dot(variations_array.T, variations_array))/variations_array.shape[0]
 
+        def _invert_cov_matrix(self, cov_matrix):
+            """Returns the inverse of the covariance matrix"""
+            try:
+                inv_cov_matrix = np.linalg.inv(self._cov_matrix)
+                # TODO: look into possible pseudo-inverses for the case of non-invertible covariance matrices.
+                # https://en.wikipedia.org/wiki/Generalized_inverse#Reflexive_generalized_inverse
+            except np.linalg.LinAlgError as e:
+                msg = 'Mahalanobis distances cannot be calculated with singular covariance matrix'
+                self._logger.error(msg)
+                self._logger.error(e, exc_info=True)
+                raise e
+            return inv_cov_matrix
+
         def _calculate_dists(self, input_array):  # TODO: Write unit tests
             """Uses the calculated mean and covariance matrix for calculating the Mahalanobis distances
             for each observation in the inbound array.
@@ -422,14 +435,7 @@ def Mahalanobis(input_array, calib_rows, nan_subst_method='median'):
             SingularError : if the covariance matrix is not invertible
             ShapeError : if the inbound array does not match the dimensionality of the problem
             """
-            if np.linalg.det(self._cov_matrix) != 0.0:
-                self._inv_cov_matrix = np.linalg.inv(self._cov_matrix)
-                # TODO: look into possible pseudo-inverses for the case of non-invertible covariance matrices.
-                # https://en.wikipedia.org/wiki/Generalized_inverse#Reflexive_generalized_inverse
-            else:
-                msg = 'Mahalanobis distances cannot be calculated with singular covariance matrix'
-                self._logger.error(msg)
-                raise SingularError(msg)
+            self._inv_cov_matrix = self._invert_cov_matrix(self._cov_matrix)
 
             if input_array.shape[1] != self.dimensionality:
                 msg = 'Dimensions of passed array do not match calibration dimensions of Mahalanobis object'
