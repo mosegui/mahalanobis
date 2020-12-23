@@ -1,6 +1,6 @@
 
 ![CircleCI](https://circleci.com/gh/mosegui/mahalanobis.svg?style=shield)
-
+https://img.shields.io/github/stars/mosegui/mahalanobis?style=plastic
 
 # Mahalanobis
 
