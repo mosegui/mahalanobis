@@ -1,3 +1,7 @@
+
+[![CircleCI](https://circleci.com/gh/mosegui/mahalanobis.svg?style=svg)]
+
+
 # Mahalanobis
 
 This package can be used for calculating distances between data points and a reference distribution according to the Mahalanobis distance algorithm. The algorithm can be seen as a generalization of the euclidean distance, but normalizing the calculated distance with the variance of the points distribution used as fingerprint.
