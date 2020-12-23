@@ -1,5 +1,5 @@
 
-[!CircleCI(https://circleci.com/gh/mosegui/mahalanobis.svg?style=shield)]
+[![CircleCI](https://circleci.com/gh/mosegui/mahalanobis.svg?style=shield)]
 
 
 # Mahalanobis
