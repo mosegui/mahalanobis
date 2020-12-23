@@ -1,0 +1,16 @@
+version: 2
+jobs:
+  build:
+    working_directory: ~/circleci-python
+    docker:
+      - image: circleci/python:latest
+    steps:
+      - checkout
+  test:
+    working_directory: ~/circleci-python
+    docker:
+      - image: circleci/python:latest
+    steps:
+      - checkout
+      - run: sudo pip install pytest numpy
+      - run: pytest tests
