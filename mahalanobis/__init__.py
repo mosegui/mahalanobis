@@ -99,7 +99,7 @@ class MahalanobisBenchmark:
     def _invert_cov_matrix(self, cov_matrix):
         """Returns the inverse of the covariance matrix"""
         try:
-            inv_cov_matrix = np.linalg.inv(self._cov_matrix)
+            inv_cov_matrix = np.linalg.inv(cov_matrix)
             # TODO: look into possible pseudo-inverses for the case of non-invertible covariance matrices.
             # https://en.wikipedia.org/wiki/Generalized_inverse#Reflexive_generalized_inverse
         except np.linalg.LinAlgError as e:
