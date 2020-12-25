@@ -51,6 +51,17 @@ class MahalanobisBenchmark:
     def __call__(self):
         self.distances = self._calculate_dists(self.array)
 
+    def _get_nan_substitution_method(self, nan_method):
+        """
+        """
+        if nan_method.lower() == 'median':
+            return np.median
+        elif nan_method.lower() == 'mean':
+            return np.mean
+        else:
+            raise NotImplementedError('NaN bypassing method needs to be mean or median')
+
+
     def _select_calibration_subarray(self):
         """Sets the array that will be used for the Mahalanobis object calibration in an
         instance variable and determines the dimensionality of the problem.
@@ -260,12 +271,7 @@ class Mahalanobis1D(MahalanobisBenchmark):
         self._logger = logging.getLogger(self.__class__.__name__)
         super().__init__(self._logger)
 
-        if nan_method.lower() == 'median':
-            self.nan_filler = np.median
-        elif nan_method.lower() == 'mean':
-            self.nan_filler = np.mean
-        else:
-            raise NotImplementedError('NaN bypassing method needs to be mean or median')
+        self.nan_filler = self._get_nan_substitution_method(nan_method)
 
         self._logger = logging.getLogger(self.__class__.__name__)
 
@@ -375,12 +381,7 @@ class MahalanobisND(MahalanobisBenchmark):
         self._logger = logging.getLogger(self.__class__.__name__)
         super().__init__(self._logger)
 
-        if nan_method.lower() == 'median':
-            self.nan_filler = np.median
-        elif nan_method.lower() == 'mean':
-            self.nan_filler = np.mean
-        else:
-            raise NotImplementedError('NaN bypassing method needs to be mean or median')
+        self.nan_filler = self._get_nan_substitution_method(nan_method)
 
         self.array = array
         self.calib_entries = calib_entries
