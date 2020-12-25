@@ -269,7 +269,6 @@ class Mahalanobis1D(MahalanobisBenchmark):
 
         self.array = array
         self.calib_entries = calib_entries
-        self.nan_method = nan_method
 
         self._select_calibration_subarray()
         self._replace_nans()
@@ -386,7 +385,6 @@ class MahalanobisND(MahalanobisBenchmark):
 
         self.array = array
         self.calib_entries = calib_entries
-        self.nan_method = nan_method
 
         self._select_calibration_subarray()
         self._replace_nans()
