@@ -1,8 +1,34 @@
 # -*- coding: utf-8 -*-
 """
-Created on Wed Oct 24 17:30:56 2018
-
 @author: mosegui
+
+The inbound array must be structured in a way the array rows are the different observations of the phenomenon
+to process, whilst the columns represent the different dimensions of the process, very much like in input
+arrays used in SciKit-Learn. Similarly, for one-dimensional processes, the input array must be a column vector.
+
+Upon class instantiation, potential NaNs have to be removed from the segment of the input array that will
+be used for the calibration of the Mahalanobis object (since the covariance matrix cannot be inverted if it
+contains a NaN). For this reason:
+    - One-dimensional arrays:
+        - If NaNs are present, they are substituted with the chosen statistical indicator (mean and median supported)
+        - If the array consists only of NaNs, the class raises an Exception
+    - Multi-dimensionl arrays:
+        - If NaNs are present, they are substituted with the chosen statistical indicator (mean and median supported)
+          of the column (process feature) in which they are located.
+        - Array columns consisting only of NaNs are removed prior to the calibration, thereby reducing the
+          dimensionality of the problem.
+
+Once the input (sub)array used for calibration is free on NaNs, the mean vector (the mean value of each feature) and
+the covariances matrix are calculated. This process of mean and covariances calculation is referred to as 'calibration'
+throughout this script. Subsequently, the Mahalanobis distances are automatically calculated for each feature of the
+inbound array, stored in the instance variable 'distances'.
+
+The Mahalanobis object has two properties 'mean' and 'cov_matrix' that allow the user to adjust their values for model
+behavior exploration, provided the new feature arrays have the same dimensions as those used in the original calibration
+of the Mahalanobis object. For exploring an object with different dimensions, a new class instance must be created.
+
+Given a Mahalanobis object instance with a successful calibration, it is also possible to calculate the Mahalanobis
+distances of external arrays benchmarked to that calibration, provided they match the calibration dimensions.
 """
 import logging
 
@@ -12,35 +38,8 @@ from .better_abc import abstract_attribute
 
 
 class MahalanobisBenchmark:
-    """This class allows to calculate the Mahalanobis distance for any arbitrary array of dimensions 1 or 2.
-
-    The inbound array must be structured in a way the array rows are the different observation of the phenomenon
-    to process, whilst the columns represent the different dimensions of the process, very much like in input
-    arrays used in SciKit-Learn. Similarly, for one-dimensional processes, the input array must be a column vector.
-
-    Upon class instantiation, potential NaNs have to be removed from the segment of the input array that will
-    be used for the calibration of the Mahalanobis object (since the covariance matrix cannot be inverted if it
-    has a NaN). For this reason:
-        - One-dimensional arrays:
-            - If NaNs are present, they are substituted with the chosen statistical indicator (mean and median supported)
-            - If the array consists only of NaNs, the class raises an Exception
-        - Multi-dimensionl arrays:
-            - If NaNs are present, they are substituted with the chosen statistical indicator (mean and median supported)
-              of the column (process feature) in which they are located.
-            - Array columns consisting only of NaNs are removed prior to the calibration, thereby reducing the
-              dimensinality of the problem.
-
-    Once the input array is free on NaNs, the mean vector (the mean value of each feature) and the covariances matrix are
-    calculated. This process of mean and covariances calculation is referred to as 'calibration' throughout this script.
-    Subsequently, the Mahalanobis distances are automatically calculated for each feature of the inbound array, stored in
-    the instance variable 'distances'.
-
-    The Mahalanobis object has two properties 'mean' and 'cov_matrix' that allow the user to adjust their values for model
-    behavior exploration, provided the new feature arrays have the same dimensions as those used in the original calibration
-    of the Mahalanobis object. For exploring an object with different dimensions, a new class instance must be created.
-
-    Given a Mahalanobis object instance with a successful calibration, it is also possible to calculate the Mahalanobis
-    distances of external arrays benchmarked to that calibration, provided they match the calibration dimensions.
+    """This parent class attributes commonly necessary in Mahalanobis calculations for both one- and multi-dimensional
+    data sets (arrays of order 1 or 2).
     """
 
     def __init__(self, logger):
@@ -241,8 +240,8 @@ class MahalanobisBenchmark:
 
 
 class Mahalanobis1D(MahalanobisBenchmark):
-    """Support parent class for MahalanobisBenchmark. Provides methods used for replacing NaNs in
-    one-dimensional input arrays and flow control for Mahalanobis distance calculations
+    """Extends MahalanobisBenchmark by providing methods used for replacing NaNs in one-dimensional
+    input arrays and flow control for Mahalanobis distance calculations.
     """
     def __init__(self, array, calib_entries, nan_method='median'):
         """Replaces the NaNs in the array considered for calibration of the Mahalanobis object
@@ -253,6 +252,8 @@ class Mahalanobis1D(MahalanobisBenchmark):
             the uni/multivariate array containing the full data set
         calib_entries : int, float or np.array
             array index up to which the data is used to calculate the Mahalanobis object calibration
+        nan_method : str
+            aggregation method to replace nans in array calibration chkunk. must be {'median', 'mean'}
         """
         self._logger = logging.getLogger(self.__class__.__name__)
         super().__init__(self._logger)
@@ -358,8 +359,8 @@ class Mahalanobis1D(MahalanobisBenchmark):
 
 
 class MahalanobisND(MahalanobisBenchmark):
-    """Support parent class for MahalanobisBenchmark. Provides methods used for replacing NaNs in
-    multi-dimensional input arrays and flow control for Mahalanobis distance calculations
+    """Extends MahalanobisBenchmark by providing methods used for replacing NaNs in multi-dimensional
+    input arrays and flow control for Mahalanobis distance calculations.
     """
     def __init__(self, array, calib_entries, nan_method='median'):
         """Replaces the NaNs in the array considered for calibration of the Mahalanobis object
@@ -370,6 +371,8 @@ class MahalanobisND(MahalanobisBenchmark):
             the multivariate array containing the full data set
         calib_entries : int, float or np.array
             array index up to which the data is used to calculate the Mahalanobis object calibration
+        nan_method : str
+            aggregation method to replace nans in array calibration chkunk. must be {'median', 'mean'}
         """
         self._logger = logging.getLogger(self.__class__.__name__)
         super().__init__(self._logger)
@@ -485,12 +488,10 @@ class MahalanobisND(MahalanobisBenchmark):
 
 
 def Mahalanobis(input_array, calib_rows, nan_subst_method='median'):
-    """This is a wrapper function that provides dynamic inheritance (parent choice) in class creation.
-
-    The main Mahalanobis class 'MahalanobisBenchmark' inherits from the above either 'Mahalanobis1D'
-    or 'MahalanobisND', depending on the amount of dimensions that the input problem has. The main
-    difference between the two cases is how the program deals with NaNs depending on whether the
-    arrays has one or more columns.
+    """This is a wrapper function that provides dynamic Mahalanobis dynamic object instantiation.
+    It returns either a 'Mahalanobis1D' or 'MahalanobisND' instance, depending on the amount of
+    dimensions that the input problem has. The main difference between the two cases is how the
+    program deals with NaNs depending on whether the arrays has one or more columns.
 
     Parameters
     ----------
@@ -503,7 +504,7 @@ def Mahalanobis(input_array, calib_rows, nan_subst_method='median'):
 
     Returns
     -------
-    MahalanobisBenchmark object instance
+    'Mahalanobis1D' or 'MahalanobisND' object instance
     """
     if input_array.shape[1] == 1:
         calculator = Mahalanobis1D
