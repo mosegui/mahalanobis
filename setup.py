@@ -2,7 +2,7 @@ import setuptools
 
 setuptools.setup(
      name='mahalanobis',
-     version='1.0',
+     version='1.0.1',
      packages=setuptools.find_packages(),
      author="Daniel Moseguí González",
      author_email="d.mosegui@gmail.com",
