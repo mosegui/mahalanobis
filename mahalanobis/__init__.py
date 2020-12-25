@@ -52,7 +52,8 @@ class MahalanobisBenchmark:
         self.distances = self._calculate_dists(self.array)
 
     def _get_nan_substitution_method(self, nan_method):
-        """
+        """Returns the aggregation function to be used for replacing NaNs in the calibration segment
+        of the input array. Currently only mean (numpy.mean) and median (numpy.median) are supported.
         """
         if nan_method.lower() == 'median':
             return np.median
