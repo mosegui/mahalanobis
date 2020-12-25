@@ -41,13 +41,15 @@ class MahalanobisBenchmark:
     """This parent class attributes commonly necessary in Mahalanobis calculations for both one- and multi-dimensional
     data sets (arrays of order 1 or 2).
     """
+    @abstract_attribute
+    def array(self):
+        pass
 
     def __init__(self, logger):
         self._logger = logger
 
-    @abstract_attribute
-    def array(self):
-        pass
+    def __call__(self):
+        self.distances = self._calculate_dists(self.array)
 
     def _select_calibration_subarray(self):
         """Sets the array that will be used for the Mahalanobis object calibration in an
@@ -275,9 +277,6 @@ class Mahalanobis1D(MahalanobisBenchmark):
         self._calibration_mean = self.calibration_chunk.mean(axis=0)  # mean to which array entries will be compared
         self._calc_cov_matrix()
 
-    def __call__(self):
-        self.distances = self._calculate_dists(self.array)
-
     def _get_nan_substitutes(self, array_with_nans):
         """According to the passed method it retrieves the value to substitute the array NaNs.
 
@@ -390,9 +389,6 @@ class MahalanobisND(MahalanobisBenchmark):
         self._replace_nans()
         self._calibration_mean = self.calibration_chunk.mean(axis=0)  # mean to which array entries will be compared
         self._calc_cov_matrix()
-
-    def __call__(self):
-        self.distances = self._calculate_dists(self.array)
 
     def _reduce_multidimensional_array_dimension(self):
         """For a multi-dimensional array (multi-column), it removes all the array columns
