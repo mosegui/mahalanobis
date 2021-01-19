@@ -122,4 +122,4 @@ The ```mean``` ```cov_matrix``` attributes can be set by the user for custom Mah
 
 ## License
 
-This project is licensed under the GNU GPL License - see the [LICENSE](LICENSE) file for details.
+This project is licensed under the GNU GPL License - see the [LICENSE](LICENSE.txt) file for details.
